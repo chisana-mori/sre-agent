@@ -3,7 +3,13 @@
 import Fastify from "fastify";
 import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
+import fastifyStatic from "@fastify/static";
 import { CodexProcess } from "./codex-process.js";
+import path from "path";
+import { fileURLToPath } from "url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const server = Fastify({
     logger: true,
@@ -14,6 +20,12 @@ await server.register(cors, {
 });
 
 await server.register(websocket);
+
+// Serve static files from public directory
+await server.register(fastifyStatic, {
+    root: path.join(__dirname, "../public"),
+    prefix: "/",
+});
 
 server.get("/api/v1/sre/socket", { websocket: true }, (socket, req) => {
     const sendSafely = (payload: unknown) => {
@@ -37,7 +49,7 @@ server.get("/api/v1/sre/socket", { websocket: true }, (socket, req) => {
         try {
             codex.start(process.env);
         } catch (error) {
-            server.log.error("Failed to start codex process", error);
+            server.log.error({ err: error }, "Failed to start codex process");
             sendSafely({ error: "Failed to start codex process" });
             closeSafely();
             return;
@@ -54,7 +66,7 @@ server.get("/api/v1/sre/socket", { websocket: true }, (socket, req) => {
         });
 
         codex.on("error", (error) => {
-            server.log.error("Codex process error", error);
+            server.log.error({ err: error }, "Codex process error");
             sendSafely({ error: "Codex process error" });
             closeSafely();
         });
@@ -65,7 +77,7 @@ server.get("/api/v1/sre/socket", { websocket: true }, (socket, req) => {
                 const data = JSON.parse(message.toString());
                 codex.send(data);
             } catch (error) {
-                server.log.error("Failed to parse message from client", error);
+                server.log.error({ err: error }, "Failed to parse message from client");
             }
         });
 
@@ -74,12 +86,12 @@ server.get("/api/v1/sre/socket", { websocket: true }, (socket, req) => {
         });
 
         socket.on("error", (error) => {
-            server.log.error("WebSocket error", error);
+            server.log.error({ err: error }, "WebSocket error");
             codex.stop();
             closeSafely();
         });
     } catch (error) {
-        server.log.error("Failed to handle websocket connection", error);
+        server.log.error({ err: error }, "Failed to handle websocket connection");
         sendSafely({ error: "Failed to start codex process" });
         closeSafely();
     }

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SRE Agent Chat</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🤖 SRE Agent</h1>
+            <div class="status" id="status">
+                <span class="status-dot disconnected"></span>
+                <span id="status-text">Disconnected</span>
+            </div>
+        </div>
+
+        <div class="chat-container" id="chat-container">
+            <div class="welcome-message">
+                <h2>Welcome to SRE Agent</h2>
+                <p>Connect to start chatting with your AI assistant</p>
+            </div>
+        </div>
+
+        <div class="approval-panel" id="approval-panel" style="display: none;">
+            <div class="approval-content">
+                <div class="approval-icon">⚠️</div>
+                <div class="approval-message" id="approval-message"></div>
+                <div class="approval-buttons">
+                    <button class="btn btn-approve" onclick="handleApproval('accept')">✓ Approve</button>
+                    <button class="btn btn-decline" onclick="handleApproval('decline')">✗ Decline</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="input-container">
+            <button class="btn btn-connect" id="connect-btn" onclick="toggleConnection()">Connect</button>
+            <input type="text" id="message-input" placeholder="Type your message..." disabled
+                onkeypress="handleKeyPress(event)">
+            <button class="btn btn-send" id="send-btn" onclick="sendMessage()" disabled>Send</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

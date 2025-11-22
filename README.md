@@ -46,6 +46,61 @@ A WebSocket-based server that wraps the OpenAI Codex agent, exposing it via a JS
 
 ## Usage
 
+### Web UI
+
+The easiest way to interact with the SRE Agent is through the web interface:
+
+1. Start the server:
+   ```bash
+   bun run dev
+   ```
+
+2. Open your browser and navigate to:
+   ```
+   http://localhost:3000
+   ```
+
+3. Click "Connect" to establish a WebSocket connection
+4. Start chatting with the agent!
+
+**Features:**
+- 💬 Real-time chat interface
+- ✅ Interactive approval prompts for command execution
+- 🎨 Modern, responsive design
+- 📱 Works on desktop and mobile browsers
+
+**Approval Policy:**
+
+The agent runs with `approvalPolicy: "onRequest"` which means:
+- All command executions require your approval
+- You'll see a prompt in the UI before any command runs
+- Click "Approve" to allow the command or "Decline" to reject it
+- This ensures you have full control over what the agent does
+
+**Sandbox Mode:**
+
+The agent runs with `workspaceWrite` sandbox mode:
+- Can read and write files in the workspace
+- Cannot access network resources
+- Provides a balance between functionality and security
+
+**Server-Side Configuration:**
+
+The SRE Agent server (`src/codex-process.ts`) starts the codex binary with default configuration:
+```typescript
+'-c', 'approval_policy="on-request"'      // CLI format uses kebab-case
+'-c', 'sandbox_permissions=["workspace-write"]'
+```
+
+**Important:** The command-line configuration (`-c`) uses **kebab-case** (e.g., `on-request`), while the JSON-RPC API uses **camelCase** (e.g., `onRequest`).
+
+**Valid `approvalPolicy` values for JSON-RPC:**
+- `"unlessTrusted"` - Request approval unless the command is trusted
+- `"onFailure"` - Request approval when a command fails
+- `"onRequest"` - Request approval for every command (most secure)
+- `"never"` - Never request approval
+
+
 ### Starting the Server
 
 Run the server in development mode (with hot reload):

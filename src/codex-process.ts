@@ -22,7 +22,17 @@ export class CodexProcess extends EventEmitter {
         // Use codex default authentication (ChatGPT login or OPENAI_API_KEY from user's environment)
         // No custom env var mapping needed - codex binary handles this automatically
 
-        this.process = spawn(CODEX_BINARY_PATH, ['app-server'], {
+        // Build command-line args with default configuration
+        const args = [
+            'app-server',
+            // Set default approval policy to require approval for all commands
+            // Valid values: untrusted, on-failure, on-request, never
+            '-c', 'approval_policy="untrusted"',
+            // Set default sandbox mode to workspace-write
+            '-c', 'sandbox_permissions=["workspace-write"]'
+        ];
+
+        this.process = spawn(CODEX_BINARY_PATH, args, {
             env: env,
             stdio: ['pipe', 'pipe', 'inherit'], // Pipe stdin/stdout, inherit stderr
         });

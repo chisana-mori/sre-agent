@@ -47,7 +47,7 @@ ws.on('message', (data) => {
     console.log('Received:', data.toString());
     const response = JSON.parse(data.toString());
 
-    // If initialization successful, start a thread
+    // If initialization successful, start a thread with approval enabled
     if (response.id === 1 && !response.error) {
         const threadStartMessage = {
             method: "thread/start",
@@ -55,8 +55,8 @@ ws.on('message', (data) => {
                 cwd: process.cwd(),
                 model: null,
                 modelProvider: null,
-                approvalPolicy: null,
-                sandbox: null,
+                approvalPolicy: "onRequest",     // Request approval for every command (JSON-RPC uses camelCase)
+                sandbox: "workspaceWrite",       // Allow workspace write access
                 config: null,
                 baseInstructions: null,
                 developerInstructions: null
