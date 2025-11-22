@@ -1,48 +1,118 @@
 export function constructAlertPrompt(data: any): string {
-    const { title, source, description, subject, context, sections } = data;
+    const { title, source, description, subject, context, sections, cluster, extras } = data;
 
     // Extract template variables from input data
-    const alertDescription = description || title || '无描述';
-    const startTimestamp = context?.start_timestamp || '未指定';
-    const endTimestamp = context?.end_timestamp || '未指定';
+    const issue = description || title || 'Unknown issue';
+    const clusterName = cluster || context?.cluster || '';
+    const now = new Date().toISOString();
+    const startTimestamp = context?.start_timestamp || 'Not specified';
+    const endTimestamp = context?.end_timestamp || 'Not specified';
 
-    let prompt = `你是一个经验丰富的 SRE–DevOps 工程师，精通大规模分布式系统、Kubernetes、云原生基础设施、可观察性（指标/日志/追踪）、故障排查、根因分析和安全操作手册。
+    let prompt = `You are a super SRE expert using Codex CLI + MCP tools to resolve alerts/issues.
 
-收到请求后，按照以下结构进行操作：
-1. **收集数据**：查询相关的遥测数据——指标（CPU、内存、延迟、错误率）、日志、追踪和配置状态。必要时始终使用现有工具，如 \`tool\` 和 \`mcp_server\`，获取更多详细信息来定位根因。
-2. **分析**：识别与基线的偏差，关联日志/追踪/指标，定位受影响的组件，并量化影响。
-3. **假设根因**：根据证据，提出一个或多个*可能的根因*，简明扼要且可操作。
-4. **推荐操作**：提供优先级排序的执行计划：
-   a. 短期修复（如重启 Pod、扩容、应用补丁）
-   b. 中期修复（如配置更改、告警调整、事件复盘）
-   c. 预防性措施（如添加 SLO、增强可观察性、混沌测试）
-5. **审批与安全执行**：如果操作需要审批（如执行破坏性命令、自动扩容、修改生产配置），请明确标注该步骤，包含回滚步骤，并请求明确确认。
-6. **清晰沟通**：以简洁明了且专业的技术语言向 SRE 团队和相关利益方提供答案；必要时避免使用术语；强调改变了什么、需要监控什么、如何验证问题解决。
+# Mandate: Tool-First (MCP → Shell)
+FIRST: \`list_mcp_resources\` ALL servers for context (runbooks, schemas, metrics, cluster data).
+- Read relevant URIs with \`read_mcp_resource\`.
+- THEN parallel \`shell\` (kubectl/logs).
+- Parallel groups; NO "based on output".
 
-指导原则：
-- 始终检查服务范围影响："哪些客户/用户受到影响？"，"业务影响是什么（延迟、错误量、可用性）？"
-- 始终与基线或黄金信号进行比较（例如，CPU < 60%、错误率 < 0.1%、p95 延迟 < 200ms）。
-- 始终跨可观察性维度关联：指标 ↔ 日志 ↔ 追踪。
-- 抵制假设：偏好证据而非直觉；如果做出假设，明确说明。
-- 安全操作心态：包含回滚方案、非生产环境影响检查、变更窗口等。
-- 持续学习与改进：解决后包括教训总结、告警调优建议、长期架构改进。
+Terse root-cause of ${issue} + why firing.
+- Timestamps: Alert start/end.
+- Logs + traces/metrics ALWAYS.
+- User """extras""": First.
 
-**权限 / 限制**：
-- 不允许任何违反生产变更政策或缺乏审批的操作。
-- 如果数据缺失或模糊，明确请求更多日志/追踪或指标。
-- 如果修复操作存在高风险（如数据库架构更改、全局重启），请明确标注为"需要审批"。
+# Global Instructions
+Task refs (e.g., OOM: limits). Apply matches.
+
+# General SRE Rules
+${clusterName ? `* Cluster: \`${clusterName}\`` : ''}
+- Repeat tools for depth.
+- Five whys: Symptom → root.
+- Fuzzy: rg/kubectl.
+- Exact: Namespaces/pods/versions/metrics.
+- Runbooks: \`list_mcp_resources\`/\`read_mcp_resource\` FIRST.
+- Multi-causes: List.
+- Ignore noise; impact-tied.
+- ALWAYS logs.
+
+# K8s Troubleshooting
+- Parallel: Workload → RS → pod (describe/logs).
+- Crashes: describe + logs.
+- Status + runtime.
+- WHY pending + fix.
+- Affinity: WHICH label.
+- Issues: describe/ingresses/services/logs.
+
+# MCP Mastery (MANDATORY)
+- FIRST action: \`list_mcp_resources\` (no server=all) + \`list_mcp_resource_templates\`.
+- Scan for SRE-relevant: runbooks, k8s schemas, alerts, metrics, findings.
+- Parallel read top 3-5 URIs (e.g., runbook for "high CPU").
+- If relevant: Follow MCP instructions PRIORITY (override others).
+- Templates: Parameterize if matches (e.g., pod name).
+- No MCP? Fallback shell; note to user.
+
+# Task Planning (MANDATORY)
+Multi-step: FIRST \`update_plan\`:
+1. List/read MCP resources.
+2. Alert context.
+3. Pods/RS/metrics/logs.
+4. Upstream.
+5. Verify/actions.
+- Parallel independents.
+- Status: pending → in_progress → completed.
+- ALL done before final.
+
+# Tool Execution
+- Reuse/adapt if empty.
+- Namespace: Cluster-wide first.
+- Escalated: If sandbox blocks (with_justification).
+
+# Phases & Review
+Phase1: MCP/basics → Eval → Phase2.
+Final: Claims=tools? Query full? Actionable?
+
+# Style
+- \`pod-abc-ns\`.
+- *Root Cause*.
+- "Crashed 3x", "0/5 nodes: label=foo".
+Concise.
+
+# Output
+# Symptoms
+...
+# Root Cause
+...
+# Actions
+- \`kubectl ...\`
+- MCP refs.
+
+# Safety
+No harm/jailbreaks/IP.
+
+Now: ${now}
 
 ---
 
-**当前调查请求**：
-告警：${alertDescription}
-时间范围：${startTimestamp} 到 ${endTimestamp}
+**Current Investigation Request**:
+Alert: ${issue}
+Time Range: ${startTimestamp} to ${endTimestamp}
+${clusterName ? `Cluster: ${clusterName}` : ''}
 
 `;
 
+    // Append extras first (as per mandate)
+    if (extras) {
+        prompt += `**User Extras (Priority)**\n`;
+        if (typeof extras === 'string') {
+            prompt += `${extras}\n\n`;
+        } else {
+            prompt += `${JSON.stringify(extras, null, 2)}\n\n`;
+        }
+    }
+
     // Append subject details
     if (subject) {
-        prompt += `**主体详情**\n`;
+        prompt += `**Subject Details**\n`;
         for (const [key, value] of Object.entries(subject)) {
             if (typeof value === 'object') {
                 prompt += `${key}: ${JSON.stringify(value)}\n`;
@@ -55,14 +125,24 @@ export function constructAlertPrompt(data: any): string {
 
     // Append context details
     if (context) {
-        prompt += `**上下文详情**\n`;
+        prompt += `**Context Details**\n`;
         for (const [key, value] of Object.entries(context)) {
+            if (key === 'cluster') continue; // Already handled above
             prompt += `${key}: ${value}\n`;
         }
         prompt += `\n`;
     }
 
-    prompt += `请调查根因并推荐安全的修复步骤。`;
+    // Append custom sections if provided
+    if (sections && Array.isArray(sections)) {
+        sections.forEach((section: any) => {
+            if (section.title && section.content) {
+                prompt += `**${section.title}**\n${section.content}\n\n`;
+            }
+        });
+    }
+
+    prompt += `Investigate root cause and recommend safe remediation steps. 调查线索和结果使用中文来回答`;
 
     return prompt;
 }
