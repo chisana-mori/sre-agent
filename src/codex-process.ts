@@ -29,7 +29,7 @@ export class CodexProcess extends EventEmitter {
             // Valid values: untrusted, on-failure, on-request, never
             '-c', 'approval_policy="untrusted"',
             // Set default sandbox mode to workspace-write
-            '-c', 'sandbox_permissions=["workspace-write"]'
+            // '-c', 'sandbox_permissions=["workspace-write"]'
         ];
 
         this.process = spawn(CODEX_BINARY_PATH, args, {

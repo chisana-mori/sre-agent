@@ -337,7 +337,7 @@ function connect() {
                         model: null,
                         modelProvider: null,
                         approvalPolicy: "onRequest",
-                        sandbox: "workspaceWrite",
+                        sandbox: "dangerFullAccess",
                         config: null,
                         baseInstructions: null,
                         developerInstructions: null

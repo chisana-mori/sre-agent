@@ -6,11 +6,14 @@ import websocket from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
 import { CodexProcess } from "./codex-process.js";
 import { convertCodexMessageToSSE } from "./codex-converter.js";
+import { constructAlertPrompt } from "./prompt-utils.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+const pendingRequests = new Map<number, any>();
 
 const server = Fastify({
     logger: true,
@@ -63,6 +66,33 @@ server.get("/api/v1/sre/socket", { websocket: true }, (socket, req) => {
 
         // Forward messages from Codex to WebSocket
         codex.on("message", (message) => {
+            // Handle internal pending requests
+            if (message.id && pendingRequests.has(message.id)) {
+                const req = pendingRequests.get(message.id);
+
+                if (req.type === 'init_alert' && message.result?.thread?.id) {
+                    pendingRequests.delete(message.id);
+                    const threadId = message.result.thread.id;
+                    const prompt = constructAlertPrompt(req.payload);
+
+                    // Start the turn with the constructed prompt
+                    codex.send({
+                        method: 'turn/start',
+                        id: Date.now(), // Simple ID generation
+                        params: {
+                            threadId: threadId,
+                            input: [{ type: 'text', text: prompt }],
+                            cwd: null,
+                            approvalPolicy: null,
+                            sandboxPolicy: null,
+                            model: req.payload.model || null,
+                            effort: null,
+                            summary: null
+                        }
+                    });
+                }
+            }
+
             const sseEvents = convertCodexMessageToSSE(message);
             sseEvents.forEach((evt) => {
                 if (socket.readyState === 1) {
@@ -86,6 +116,30 @@ server.get("/api/v1/sre/socket", { websocket: true }, (socket, req) => {
         socket.on("message", (message) => {
             try {
                 const data = JSON.parse(message.toString());
+
+                // Check for special Alert payload (heuristic: has source, title, subject)
+                if (data.source && data.title && data.subject) {
+                    const reqId = Date.now();
+                    pendingRequests.set(reqId, { type: 'init_alert', payload: data });
+
+                    // Start a new thread for this alert
+                    codex.send({
+                        method: 'thread/start',
+                        id: reqId,
+                        params: {
+                            cwd: "/tmp",
+                            model: data.model || null,
+                            modelProvider: null,
+                            approvalPolicy: "onRequest",
+                            sandbox: "dangerFullAccess",
+                            config: null,
+                            baseInstructions: null,
+                            developerInstructions: null
+                        }
+                    });
+                    return;
+                }
+
                 codex.send(data);
             } catch (error) {
                 server.log.error({ err: error }, "Failed to parse message from client");
