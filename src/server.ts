@@ -5,6 +5,7 @@ import cors from "@fastify/cors";
 import websocket from "@fastify/websocket";
 import fastifyStatic from "@fastify/static";
 import { CodexProcess } from "./codex-process.js";
+import { convertCodexMessageToSSE } from "./codex-converter.js";
 import path from "path";
 import { fileURLToPath } from "url";
 
@@ -25,6 +26,11 @@ await server.register(websocket);
 await server.register(fastifyStatic, {
     root: path.join(__dirname, "../public"),
     prefix: "/",
+});
+
+// Serve the new modern UI as default
+server.get("/", async (request, reply) => {
+    return reply.sendFile("index-v2.html");
 });
 
 server.get("/api/v1/sre/socket", { websocket: true }, (socket, req) => {
@@ -57,7 +63,12 @@ server.get("/api/v1/sre/socket", { websocket: true }, (socket, req) => {
 
         // Forward messages from Codex to WebSocket
         codex.on("message", (message) => {
-            sendSafely(message);
+            const sseEvents = convertCodexMessageToSSE(message);
+            sseEvents.forEach((evt) => {
+                if (socket.readyState === 1) {
+                    socket.send(evt);
+                }
+            });
         });
 
         codex.on("exit", (code) => {
