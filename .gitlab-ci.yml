@@ -1,0 +1,56 @@
+stages:
+  - lint
+  - build
+  - package
+
+variables:
+  DOCKER_IMAGE: sre-agent
+  HELM_CHART_NAME: sre-agent
+
+lint:
+  stage: lint
+  image: oven/bun:1
+  script:
+    - bun install
+    - bun run lint
+    - bun run format:check
+
+build:
+  stage: build
+  image: docker:latest
+  services:
+    - docker:dind
+  variables:
+    DOCKER_DRIVER: overlay2
+    DOCKER_TLS_CERTDIR: ''
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $CI_REGISTRY
+  script:
+    - echo "Building Docker image..."
+    # Install buildx for multi-arch support
+    - mkdir -p ~/.docker/cli-plugins/
+    - wget -O ~/.docker/cli-plugins/docker-buildx https://github.com/docker/buildx/releases/download/v0.11.2/buildx-v0.11.2.linux-amd64
+    - chmod a+x ~/.docker/cli-plugins/docker-buildx
+    - docker buildx create --use
+
+    # Build and push with cache
+    - |
+      docker buildx build \
+        --platform linux/amd64,linux/arm64 \
+        --cache-from type=registry,ref=$CI_REGISTRY_IMAGE:cache \
+        --cache-to type=registry,ref=$CI_REGISTRY_IMAGE:cache,mode=max \
+        --tag $CI_REGISTRY_IMAGE:$CI_COMMIT_SHA \
+        --tag $CI_REGISTRY_IMAGE:latest \
+        --push \
+        .
+
+helm-package:
+  stage: package
+  image: alpine/helm:latest
+  script:
+    - echo "Packaging Helm chart..."
+    - helm package charts/$HELM_CHART_NAME --version 0.1.0-$CI_COMMIT_SHORT_SHA --app-version $CI_COMMIT_SHA
+    - echo "Chart packaged successfully."
+  artifacts:
+    paths:
+      - '*.tgz'
