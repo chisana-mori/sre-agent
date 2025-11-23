@@ -37,8 +37,18 @@ spec:
             - name: http
               containerPort: {{ .Values.service.port }}
               protocol: TCP
+          volumeMounts:
+            - name: codex-config
+              mountPath: /root/.codex/config.toml
+              subPath: config.toml
+              readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: codex-config
+          secret:
+            secretName: {{ include "sre-agent.fullname" . }}-config
+            defaultMode: 0644
       {{- with .Values.nodeSelector }}
       nodeSelector:
         {{- toYaml . | nindent 8 }}

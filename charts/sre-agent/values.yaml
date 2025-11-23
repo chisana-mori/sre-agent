@@ -1,5 +1,31 @@
 replicaCount: 1
 
+# Codex configuration file content
+# This will be mounted as ~/.codex/config.toml in the container
+codexConfig: |
+  model = "x-ai/grok-4.1-fast:free"
+  model_provider = "openrouter"
+
+  [model_providers.openrouter]
+  name = "OpenRouter"
+  base_url = "https://openrouter.ai/api/v1"
+  env_key = "OPENROUTER_API_KEY"
+  wire_api = "chat"
+
+  [projects."/app"]
+  trust_level = "untrusted"
+
+  [mcp_servers.k8sgpt]
+  command = "/usr/local/bin/k8sgpt"
+  args = ["serve", "--mcp"]
+
+  [mcp_servers.k8sgpt.env]
+  KUBECONFIG = "/root/.kube/config"
+  K8SGPT_AI_PROVIDER = "openai"
+  K8SGPT_AI_MODEL = "gpt-4"
+  K8SGPT_OPENAI_API_KEY = "sk-proj-......"
+  K8SGPT_OPENAI_BASE_URL = "https://api.your-proxy.com/v1"
+
 image:
   repository: sre-agent
   pullPolicy: IfNotPresent
