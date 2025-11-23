@@ -31,6 +31,22 @@ export function convertCodexMessageToSSE(message: any): string[] {
   }
 
   if (!message || !message.params || !message.params.msg) {
+    // Handle direct method calls like item/commandExecution/requestApproval
+    if (message.method === 'item/commandExecution/requestApproval') {
+      const params = message.params;
+      const requestId = message.id;
+
+      const sseData = {
+        request_id: requestId,
+        tool_call_id: params.itemId,
+        description: `Command Execution Approval Request:\nThread: ${params.threadId}\nTurn: ${params.turnId}\nCommand ID: ${params.itemId}\nReason: ${params.reason || 'N/A'}\nRisk: ${params.risk || 'N/A'}`,
+        reason: params.reason,
+        risk: params.risk,
+        thread_id: params.threadId,
+        turn_id: params.turnId,
+      };
+      events.push(`event: approval_required\ndata: ${JSON.stringify(sseData)}\n\n`);
+    }
     return events;
   }
 
@@ -119,7 +135,16 @@ export function convertCodexMessageToSSE(message: any): string[] {
     }
     case 'exec_approval_request': {
       const event = msg as ExecApprovalRequestEvent;
+
+      // Filter out events with empty commands (duplicate/phantom events)
+      if (!event.command || event.command.length === 0) {
+        return events;
+      }
+
+      // For exec_approval_request, we do NOT send a request_id as per user instruction.
+      // The actionable approval event comes from item/commandExecution/requestApproval.
       const sseData = {
+        request_id: null,
         tool_call_id: event.call_id,
         description: event.command.join(' '),
         reason: event.reason,

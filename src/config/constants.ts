@@ -13,6 +13,6 @@ export const REQUEST_IDS = {
 
 export const DEFAULT_CODEX_CONFIG = {
   CWD: '/tmp',
-  APPROVAL_POLICY: 'onRequest',
-  SANDBOX: 'dangerFullAccess',
+  APPROVAL_POLICY: 'unlessTrusted',
+  SANDBOX: 'workspaceWrite',
 } as const;

@@ -26,14 +26,17 @@ export class StreamController {
   };
 
   handleSend = async (request: FastifyRequest, reply: FastifyReply) => {
-    const { connectionId, payload } = (request.body as any) || {};
+    const body = (request.body as any) || {};
+    const { connectionId, ...rest } = body;
 
     if (!connectionId) {
       return reply.code(400).send({ error: 'Invalid or missing connectionId' });
     }
 
     try {
-      this.codexService.forwardPayload(connectionId, payload);
+      // Forward the rest of the body exactly as received (excluding connectionId)
+      // Expected format: { id: 0, result: { decision: "accept" } }
+      this.codexService.sendApproval(connectionId, rest);
     } catch (error) {
       request.log.error({ err: error }, 'Failed to forward payload to Codex');
       return reply.code(500).send({ error: 'Failed to forward payload to Codex' });

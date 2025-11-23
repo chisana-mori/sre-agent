@@ -63,8 +63,7 @@ export function createCodexMessageHandler(
     // Convert current message to SSE events and send
     const sseEvents = convertCodexMessageToSSE(message);
     sseEvents.forEach((evt: string) => {
-      // console.log(`[${connectionId}] SSE event sent:`);
-      // console.log(evt.trim());
+      console.log(evt.trim());
       sendSafely(evt);
     });
 

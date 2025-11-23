@@ -136,6 +136,27 @@ export class CodexService {
       return;
     }
 
+    console.log('Forwarding payload to Codex:', JSON.stringify(payload, null, 2));
+
     connection.codex.send(payload);
+  }
+
+  sendApproval(connectionId: string, jsonRpcResponse: any) {
+    const connection = connectionManager.getConnection(connectionId);
+    if (!connection) {
+      throw new Error('Connection not found');
+    }
+
+    console.log('Sending approval to Codex:', JSON.stringify(jsonRpcResponse, null, 2));
+    this.logger.info(
+      {
+        connectionId,
+        approvalId: jsonRpcResponse?.id,
+        decision: jsonRpcResponse?.result?.decision,
+        raw: jsonRpcResponse,
+      },
+      'Forwarding approval response to Codex',
+    );
+    connection.codex.send(jsonRpcResponse);
   }
 }

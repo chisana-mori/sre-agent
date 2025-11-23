@@ -2,6 +2,7 @@ let connectionId = null;
 let threadId = null;
 let currentApprovalRequest = null;
 let sseAbortController = null;
+let lastRpcId = null;
 
 // Configure marked
 if (typeof marked !== 'undefined') {
@@ -428,6 +429,9 @@ function handleSseEvent(rawEvent) {
 
   if (eventType === 'rpc_result') {
     const response = data;
+    if (response.id) {
+      lastRpcId = response.id;
+    }
     // Capture server-started thread id
     if (response.result?.thread?.id) {
       threadId = response.result.thread.id;
@@ -460,10 +464,16 @@ function handleSseEvent(rawEvent) {
       }
       break;
     case 'approval_required':
+      const approvalId = data.request_id || data.tool_call_id || lastRpcId;
       internalEvent = {
         type: 'exec_approval_request',
-        params: { command: data.description, itemId: data.tool_call_id },
-        id: data.tool_call_id,
+        params: {
+          command: data.description,
+          itemId: data.tool_call_id,
+          reason: data.reason,
+          risk: data.risk,
+        },
+        id: approvalId,
       };
       break;
     case 'tool_calling_result':

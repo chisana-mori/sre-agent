@@ -86,6 +86,9 @@ async function main() {
   }
 }
 
+let activeConnectionId: string | null = null;
+let lastRpcResultId: string | number | null = null;
+
 function handleEvent(raw: string) {
   let eventType: string | null = null;
   const dataLines: string[] = [];
@@ -108,6 +111,59 @@ function handleEvent(raw: string) {
 
   console.log(`\n[event: ${eventType || 'unknown'}]`);
   console.log(data);
+
+  if (eventType === 'approval_required') {
+    // 使用审批请求中的 request_id，这是 Codex 期望的 ID
+    const approvalId = data.request_id;
+    if (approvalId !== undefined && approvalId !== null) {
+      console.log('Approval required! Auto-approving...');
+      sendApproval(approvalId);
+    } else {
+      console.warn('Ignoring approval request without request_id (likely informational):', data);
+    }
+  } else if (eventType === 'connection_ack') {
+    activeConnectionId = data.connectionId;
+    console.log('Captured connectionId:', activeConnectionId);
+  } else if (eventType === 'rpc_result') {
+    if (data.id !== undefined) {
+      lastRpcResultId = data.id;
+      console.log('Captured rpc_result id:', lastRpcResultId);
+    }
+  }
+}
+
+async function sendApproval(requestId: string | number) {
+  if (!activeConnectionId) {
+    console.error('Cannot send approval: No connectionId');
+    return;
+  }
+
+  // 审批响应的 id 应该使用审批请求中的 request_id
+  const payload = {
+    connectionId: activeConnectionId,
+    id: requestId, // 使用审批请求的 request_id，而不是 lastRpcResultId
+    result: {
+      decision: 'accept',
+    },
+  };
+
+  console.log('Approval payload:', payload);
+  try {
+    const res = await fetch('http://localhost:8081/api/stream/investigate/send', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+    console.log('Approval sent:', res.status);
+    const responseText = await res.text();
+    if (responseText) {
+      console.log('Response:', responseText);
+    }
+  } catch (e) {
+    console.error('Failed to send approval:', e);
+  }
 }
 
 main().catch((err) => {
