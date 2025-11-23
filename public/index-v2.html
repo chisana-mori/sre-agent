@@ -14,218 +14,245 @@
             theme: {
                 extend: {
                     colors: {
-                        primary: '#6366f1',
-                        secondary: '#8b5cf6',
-                    }
+                        border: "hsl(var(--border))",
+                        input: "hsl(var(--input))",
+                        ring: "hsl(var(--ring))",
+                        background: "hsl(var(--background))",
+                        foreground: "hsl(var(--foreground))",
+                        primary: {
+                            DEFAULT: "hsl(var(--primary))",
+                            foreground: "hsl(var(--primary-foreground))",
+                        },
+                        secondary: {
+                            DEFAULT: "hsl(var(--secondary))",
+                            foreground: "hsl(var(--secondary-foreground))",
+                        },
+                        destructive: {
+                            DEFAULT: "hsl(var(--destructive))",
+                            foreground: "hsl(var(--destructive-foreground))",
+                        },
+                        muted: {
+                            DEFAULT: "hsl(var(--muted))",
+                            foreground: "hsl(var(--muted-foreground))",
+                        },
+                        accent: {
+                            DEFAULT: "hsl(var(--accent))",
+                            foreground: "hsl(var(--accent-foreground))",
+                        },
+                        popover: {
+                            DEFAULT: "hsl(var(--popover))",
+                            foreground: "hsl(var(--popover-foreground))",
+                        },
+                        card: {
+                            DEFAULT: "hsl(var(--card))",
+                            foreground: "hsl(var(--card-foreground))",
+                        },
+                    },
+                    borderRadius: {
+                        lg: "var(--radius)",
+                        md: "calc(var(--radius) - 2px)",
+                        sm: "calc(var(--radius) - 4px)",
+                    },
                 }
             }
         }
     </script>
     <style>
-        @keyframes gradient {
-            0% {
-                background-position: 0% 50%;
-            }
-
-            50% {
-                background-position: 100% 50%;
-            }
-
-            100% {
-                background-position: 0% 50%;
-            }
+        :root {
+            --background: 0 0% 100%;
+            --foreground: 240 10% 3.9%;
+            --card: 0 0% 100%;
+            --card-foreground: 240 10% 3.9%;
+            --popover: 0 0% 100%;
+            --popover-foreground: 240 10% 3.9%;
+            --primary: 240 5.9% 10%;
+            --primary-foreground: 0 0% 98%;
+            --secondary: 240 4.8% 95.9%;
+            --secondary-foreground: 240 5.9% 10%;
+            --muted: 240 4.8% 95.9%;
+            --muted-foreground: 240 3.8% 46.1%;
+            --accent: 240 4.8% 95.9%;
+            --accent-foreground: 240 5.9% 10%;
+            --destructive: 0 84.2% 60.2%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 240 5.9% 90%;
+            --input: 240 5.9% 90%;
+            --ring: 240 10% 3.9%;
+            --radius: 0.5rem;
         }
 
-        .gradient-bg {
-            background: linear-gradient(-45deg, #6366f1, #8b5cf6, #ec4899, #f59e0b);
-            background-size: 400% 400%;
-            animation: gradient 15s ease infinite;
+        .dark {
+            --background: 240 10% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 240 10% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --popover: 240 10% 3.9%;
+            --popover-foreground: 0 0% 98%;
+            --primary: 0 0% 98%;
+            --primary-foreground: 240 5.9% 10%;
+            --secondary: 240 3.7% 15.9%;
+            --secondary-foreground: 0 0% 98%;
+            --muted: 240 3.7% 15.9%;
+            --muted-foreground: 240 5% 64.9%;
+            --accent: 240 3.7% 15.9%;
+            --accent-foreground: 0 0% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 0 0% 98%;
+            --border: 240 3.7% 15.9%;
+            --input: 240 3.7% 15.9%;
+            --ring: 240 4.9% 83.9%;
         }
 
-        .message-content pre {
-            background: #1e293b;
+        body {
+            font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        /* Markdown Styles */
+        .prose pre {
+            background-color: hsl(var(--muted));
+            border-radius: calc(var(--radius) - 2px);
             padding: 1rem;
-            border-radius: 0.5rem;
             overflow-x: auto;
-            margin: 0.5rem 0;
         }
 
-        .message-content code {
-            background: #1e293b;
+        .prose code {
+            background-color: hsl(var(--muted));
             padding: 0.2rem 0.4rem;
             border-radius: 0.25rem;
-            font-family: 'Courier New', monospace;
+            font-size: 0.875em;
         }
 
-        .message-content pre code {
-            background: transparent;
+        .prose pre code {
+            background-color: transparent;
             padding: 0;
         }
 
-        /* Accordion Styles */
-        .accordion-header {
-            cursor: pointer;
-            user-select: none;
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
         }
 
-        .accordion-content {
-            max-height: 0;
-            overflow: hidden;
-            transition: max-height 0.3s ease-out;
+        ::-webkit-scrollbar-track {
+            background: transparent;
         }
 
-        .accordion-content.open {
-            max-height: 1000px;
-            /* Arbitrary large height */
+        ::-webkit-scrollbar-thumb {
+            background: hsl(var(--muted-foreground) / 0.3);
+            border-radius: 4px;
         }
 
-        /* Diff Styles */
-        .d2h-wrapper {
-            background-color: #1e293b;
-            border-radius: 0.5rem;
-            overflow: hidden;
-        }
-
-        .d2h-file-header {
-            background-color: #0f172a;
-            border-bottom: 1px solid #334155;
-        }
-
-        /* Plan Styles */
-        .plan-step {
-            position: relative;
-            padding-left: 2rem;
-        }
-
-        .plan-step::before {
-            content: '';
-            position: absolute;
-            left: 0.5rem;
-            top: 0.5rem;
-            bottom: -0.5rem;
-            width: 2px;
-            background-color: #334155;
-        }
-
-        .plan-step:last-child::before {
-            display: none;
-        }
-
-        .plan-step-dot {
-            position: absolute;
-            left: 0;
-            top: 0.5rem;
-            width: 1rem;
-            height: 1rem;
-            border-radius: 50%;
-            background-color: #6366f1;
-            border: 2px solid #0f172a;
+        ::-webkit-scrollbar-thumb:hover {
+            background: hsl(var(--muted-foreground) / 0.5);
         }
     </style>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/diff2html/bundles/css/diff2html.min.css">
     <script src="https://cdn.jsdelivr.net/npm/diff2html/bundles/js/diff2html-ui.min.js"></script>
 </head>
 
-<body class="bg-gray-950 text-gray-100 h-screen overflow-hidden">
-    <div class="flex flex-col h-screen">
-        <!-- Header -->
-        <header class="gradient-bg shadow-lg">
-            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-                <div class="flex items-center justify-between">
-                    <div class="flex items-center space-x-3">
-                        <svg class="w-8 h-8 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+<body class="bg-background text-foreground h-screen flex flex-col overflow-hidden antialiased selection:bg-primary/20">
+
+    <!-- Top Bar -->
+    <header class="border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div class="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
+            <div class="flex items-center gap-2 font-semibold">
+                <div class="w-6 h-6 rounded-md bg-primary text-primary-foreground flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M13 10V3L4 14h7v7l9-11h-7z" />
+                    </svg>
+                </div>
+                <span>SRE Agent</span>
+            </div>
+            <div class="flex items-center gap-2">
+                <div id="status-indicator"
+                    class="flex items-center gap-2 text-xs text-muted-foreground px-2 py-1 rounded-full bg-muted/50">
+                    <div id="status-dot" class="w-1.5 h-1.5 rounded-full bg-destructive"></div>
+                    <span id="status-text">Disconnected</span>
+                </div>
+                <button id="connect-btn" onclick="toggleConnection()"
+                    class="text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded-md transition-colors">
+                    Connect
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Chat Area -->
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <div id="chat-container" class="flex-1 overflow-y-auto p-4 scroll-smooth">
+            <div class="max-w-3xl mx-auto space-y-6 pb-4">
+                <!-- Welcome Message -->
+                <div id="welcome" class="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
+                    <div class="w-12 h-12 rounded-xl bg-muted flex items-center justify-center">
+                        <svg class="w-6 h-6 text-muted-foreground" fill="none" stroke="currentColor"
+                            viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z">
-                            </path>
+                                d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                         </svg>
-                        <h1 class="text-2xl font-bold text-white">SRE Agent</h1>
                     </div>
-                    <div class="flex items-center space-x-4">
-                        <div id="status-indicator"
-                            class="flex items-center space-x-2 bg-white/20 backdrop-blur-sm px-4 py-2 rounded-full">
-                            <div id="status-dot" class="w-2 h-2 rounded-full bg-red-500"></div>
-                            <span id="status-text" class="text-sm font-medium text-white">Disconnected</span>
-                        </div>
-                        <button id="connect-btn" onclick="toggleConnection()"
-                            class="bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-2 rounded-full font-medium transition-all duration-200 hover:scale-105">
-                            Connect
-                        </button>
+                    <div>
+                        <h2 class="text-lg font-semibold">Welcome to SRE Agent</h2>
+                        <p class="text-sm text-muted-foreground">Ready to help you troubleshoot and resolve issues.</p>
                     </div>
                 </div>
             </div>
-        </header>
+        </div>
 
-        <!-- Chat Container -->
-        <main class="flex-1 overflow-hidden bg-gray-900">
-            <div class="max-w-4xl mx-auto h-full flex flex-col">
-                <div id="chat-container" class="flex-1 overflow-y-auto px-4 py-6 space-y-4">
-                    <!-- Welcome Message -->
-                    <div id="welcome" class="text-center py-20">
-                        <div
-                            class="inline-block p-4 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl mb-4">
-                            <svg class="w-16 h-16 text-indigo-400" fill="none" stroke="currentColor"
-                                viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                    d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z">
-                                </path>
-                            </svg>
-                        </div>
-                        <h2 class="text-3xl font-bold text-gray-100 mb-2">Welcome to SRE Agent</h2>
-                        <p class="text-gray-400 text-lg">Your AI-powered system reliability assistant</p>
-                        <p class="text-gray-500 mt-4">Click "Connect" to start chatting</p>
+        <!-- Approval Panel (Floating) -->
+        <div id="approval-panel" class="hidden absolute bottom-24 left-0 right-0 z-50 px-4">
+            <div
+                class="max-w-3xl mx-auto bg-card border border-border shadow-lg rounded-lg p-4 animate-in slide-in-from-bottom-5 fade-in duration-300">
+                <div class="flex items-start gap-4">
+                    <div class="p-2 bg-yellow-500/10 rounded-md">
+                        <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
                     </div>
-                </div>
-
-                <!-- Approval Panel -->
-                <div id="approval-panel" class="hidden border-t border-yellow-500/50 bg-yellow-500/10 backdrop-blur-sm">
-                    <div class="max-w-4xl mx-auto px-4 py-4">
-                        <div class="flex items-start space-x-4">
-                            <div class="flex-shrink-0">
-                                <svg class="w-6 h-6 text-yellow-400" fill="none" stroke="currentColor"
-                                    viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z">
-                                    </path>
-                                </svg>
-                            </div>
-                            <div class="flex-1">
-                                <h3 class="text-sm font-semibold text-yellow-400 mb-1">Command Approval Required</h3>
-                                <p id="approval-message" class="text-sm text-gray-300"></p>
-                            </div>
-                            <div class="flex space-x-2">
-                                <button onclick="handleApproval('accept')"
-                                    class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                    ✓ Approve
-                                </button>
-                                <button onclick="handleApproval('decline')"
-                                    class="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-                                    ✗ Decline
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- Input Area -->
-                <div class="border-t border-gray-800 bg-gray-900/50 backdrop-blur-sm">
-                    <div class="max-w-4xl mx-auto px-4 py-4">
-                        <div class="flex space-x-4">
-                            <input type="text" id="message-input" placeholder="Type your message..." disabled
-                                onkeypress="handleKeyPress(event)"
-                                class="flex-1 bg-gray-800 text-gray-100 border border-gray-700 rounded-xl px-4 py-3 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:opacity-50 disabled:cursor-not-allowed placeholder-gray-500">
-                            <button id="send-btn" onclick="sendMessage()" disabled
-                                class="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-medium transition-all duration-200 hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:scale-100">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                        d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8"></path>
-                                </svg>
+                    <div class="flex-1">
+                        <h3 class="text-sm font-medium mb-1">Approval Required</h3>
+                        <p id="approval-message"
+                            class="text-sm text-muted-foreground font-mono bg-muted p-2 rounded mb-3"></p>
+                        <div class="flex gap-2">
+                            <button onclick="handleApproval('accept')"
+                                class="bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                                Approve
+                            </button>
+                            <button onclick="handleApproval('decline')"
+                                class="bg-destructive text-destructive-foreground hover:bg-destructive/90 px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                                Deny
                             </button>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
+
+        <!-- Input Area -->
+        <div class="p-4 bg-background border-t border-border">
+            <div class="max-w-3xl mx-auto relative">
+                <div
+                    class="relative flex items-end gap-2 p-2 border border-input rounded-xl bg-background shadow-sm focus-within:ring-1 focus-within:ring-ring">
+                    <textarea id="message-input" rows="1" placeholder="Ask me anything..." disabled
+                        onkeypress="handleKeyPress(event)"
+                        class="flex-1 bg-transparent border-0 focus:ring-0 resize-none py-2.5 px-2 text-sm max-h-32 disabled:opacity-50"
+                        style="min-height: 44px;"></textarea>
+                    <button id="send-btn" onclick="sendMessage()" disabled
+                        class="mb-1 p-2 rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M5 12h14M12 5l7 7-7 7" />
+                        </svg>
+                    </button>
+                </div>
+                <div class="text-center mt-2">
+                    <p class="text-[10px] text-muted-foreground">SRE Agent can make mistakes. Please verify important
+                        information.</p>
+                </div>
+            </div>
+        </div>
+    </main>
 
     <script src="app-v2.js"></script>
 </body>

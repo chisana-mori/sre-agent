@@ -18,9 +18,9 @@ if (typeof marked !== 'undefined') {
 function renderMarkdown(content) {
     if (typeof marked !== 'undefined' && typeof DOMPurify !== 'undefined') {
         const html = marked.parse(content);
-        return `<div class="message-content prose prose-invert max-w-none">${DOMPurify.sanitize(html)}</div>`;
+        return `<div class="message-content prose prose-invert prose-sm max-w-none text-sm leading-relaxed">${DOMPurify.sanitize(html)}</div>`;
     }
-    return `<div class="message-content whitespace-pre-wrap">${content}</div>`;
+    return `<div class="message-content whitespace-pre-wrap text-sm">${content}</div>`;
 }
 
 function renderAccordion(title, content) {
@@ -30,15 +30,15 @@ function renderAccordion(title, content) {
     const safeContent = contentStr.replace(/</g, '&lt;').replace(/>/g, '&gt;');
 
     return `
-        <div class="border border-gray-700 rounded-lg overflow-hidden mb-2">
-            <div class="accordion-header bg-gray-800 px-4 py-2 flex items-center justify-between hover:bg-gray-750 transition-colors" onclick="toggleAccordion('${id}')">
-                <span class="text-sm font-medium text-gray-300 truncate">${title}</span>
-                <svg id="icon-${id}" class="w-4 h-4 text-gray-400 transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="border border-border rounded-md overflow-hidden mb-2 bg-background">
+            <div class="accordion-header bg-muted/50 px-3 py-2 flex items-center justify-between hover:bg-muted transition-colors cursor-pointer" onclick="toggleAccordion('${id}')">
+                <span class="text-xs font-medium text-muted-foreground truncate">${title}</span>
+                <svg id="icon-${id}" class="w-3 h-3 text-muted-foreground transform transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path>
                 </svg>
             </div>
-            <div id="${id}" class="accordion-content bg-gray-900">
-                <div class="p-4 text-xs font-mono text-gray-400 whitespace-pre-wrap overflow-x-auto">${safeContent}</div>
+            <div id="${id}" class="accordion-content bg-card">
+                <div class="p-3 text-xs font-mono text-muted-foreground whitespace-pre-wrap overflow-x-auto">${safeContent}</div>
             </div>
         </div>
     `;
@@ -63,7 +63,7 @@ window.toggleAccordion = toggleAccordion;
 function renderDiff(diffContent) {
     const id = 'diff-' + Math.random().toString(36).substr(2, 9);
     // We need to render this after insertion, so we return a placeholder and a callback
-    const html = `<div id="${id}" class="diff-container my-2"></div>`;
+    const html = `<div id="${id}" class="diff-container my-2 rounded-md overflow-hidden border border-border"></div>`;
 
     const callback = () => {
         const target = document.getElementById(id);
@@ -84,27 +84,35 @@ function renderDiff(diffContent) {
 function renderApprovalRequest(event) {
     const params = event.params;
     const id = params.itemId;
-    const command = params.command || 'Unknown command'; // Assuming command is in params, if not we might need to look elsewhere
+    const command = params.command || 'Unknown command';
 
     // Store for handling
     currentApprovalRequest = event;
 
+    // Also show the floating panel
+    const panel = document.getElementById('approval-panel');
+    const msg = document.getElementById('approval-message');
+    if (panel && msg) {
+        msg.textContent = command;
+        panel.classList.remove('hidden');
+    }
+
     return `
-        <div class="bg-yellow-900/20 border border-yellow-500/30 rounded-xl p-4 my-2">
-            <div class="flex items-start space-x-3">
-                <div class="flex-shrink-0 mt-1">
-                    <svg class="w-5 h-5 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="bg-yellow-500/10 border border-yellow-500/20 rounded-lg p-3 my-2">
+            <div class="flex items-start gap-3">
+                <div class="flex-shrink-0 mt-0.5">
+                    <svg class="w-4 h-4 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                     </svg>
                 </div>
                 <div class="flex-1">
-                    <h3 class="text-sm font-semibold text-yellow-500 mb-1">Approval Request</h3>
-                    <div class="text-sm text-gray-300 font-mono bg-black/30 p-2 rounded mb-3">${command}</div>
-                    <div class="flex space-x-2">
-                        <button onclick="handleApproval('accept')" class="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                    <h3 class="text-xs font-semibold text-yellow-500 mb-1">Approval Request</h3>
+                    <div class="text-xs text-muted-foreground font-mono bg-background/50 p-2 rounded mb-2 border border-border">${command}</div>
+                    <div class="flex gap-2">
+                        <button onclick="handleApproval('accept')" class="bg-primary text-primary-foreground hover:bg-primary/90 px-2 py-1 rounded text-xs font-medium transition-colors">
                             Approve
                         </button>
-                        <button onclick="handleApproval('decline')" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1.5 rounded text-sm font-medium transition-colors">
+                        <button onclick="handleApproval('decline')" class="bg-destructive text-destructive-foreground hover:bg-destructive/90 px-2 py-1 rounded text-xs font-medium transition-colors">
                             Deny
                         </button>
                     </div>
@@ -118,11 +126,9 @@ function renderPlan(plan) {
     if (!Array.isArray(plan)) return '';
 
     const stepsHtml = plan.map((step, index) => `
-        <div class="plan-step pb-4">
-            <div class="plan-step-dot flex items-center justify-center">
-                ${step.status === 'completed' ? '<div class="w-2 h-2 bg-white rounded-full"></div>' : ''}
-            </div>
-            <div class="text-sm ${step.status === 'completed' ? 'text-gray-400 line-through' : step.status === 'active' ? 'text-indigo-400 font-medium' : 'text-gray-500'}">
+        <div class="plan-step pb-4 relative pl-6 border-l border-border last:border-0">
+            <div class="absolute left-[-5px] top-1 w-2.5 h-2.5 rounded-full border-2 border-background ${step.status === 'completed' ? 'bg-primary' : step.status === 'active' ? 'bg-primary animate-pulse' : 'bg-muted'}"></div>
+            <div class="text-sm ${step.status === 'completed' ? 'text-muted-foreground line-through' : step.status === 'active' ? 'text-primary font-medium' : 'text-muted-foreground'}">
                 ${step.description || step.title || 'Step ' + (index + 1)}
             </div>
         </div>
@@ -134,13 +140,9 @@ function renderPlan(plan) {
 // --- Event Handling ---
 
 function normalizeEvent(response) {
-    // Map JSON-RPC messages to codexia-style events
-
-    // Handle Codexia-style events if they come through directly
     if (response.method && response.method.startsWith('codex/event/')) {
         if (response.params && response.params.msg) {
             const msg = response.params.msg;
-            // Ensure type is present
             return { ...msg, type: msg.type || 'unknown_codex_event', conversationId: response.params.conversationId };
         }
     }
@@ -149,7 +151,6 @@ function normalizeEvent(response) {
         if (response.params?.item?.type === 'agentMessage') {
             return { type: 'agent_message', message: response.params.item.text };
         }
-        // Can add other item types here if we discover them
     }
 
     if (response.method === 'item/commandExecution/requestApproval') {
@@ -160,14 +161,13 @@ function normalizeEvent(response) {
         if (response.params?.turn?.status === 'failed') {
             return { type: 'error', message: response.params.turn.error?.message || 'Turn failed' };
         }
-        return { type: 'task_complete', duration: response.params?.turn?.durationMs }; // Hypothetical
+        return { type: 'task_complete', duration: response.params?.turn?.durationMs };
     }
 
     if (response.method === 'error') {
         return { type: 'error', message: response.params?.error?.message || 'Unknown error' };
     }
 
-    // Pass through unknown messages as 'unknown' type for debug rendering
     return { type: 'unknown', original: response };
 }
 
@@ -177,18 +177,27 @@ function appendMessageElement(html, type, callback) {
     if (welcome) welcome.remove();
 
     const messageDiv = document.createElement('div');
-    messageDiv.className = `flex ${type === 'user' ? 'justify-end' : 'justify-start'} animate-fade-in mb-4`;
+    messageDiv.className = `flex gap-4 mb-6 animate-fade-in ${type === 'user' ? 'flex-row-reverse' : ''}`;
 
+    // Avatar
+    const avatar = document.createElement('div');
+    avatar.className = `w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 border border-border ${type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`;
+    avatar.innerHTML = type === 'user'
+        ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>'
+        : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>';
+
+    // Content Bubble
     const bubble = document.createElement('div');
-    bubble.className = `max-w-3xl w-full ${type === 'user' ? 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white' : 'bg-gray-800 border border-gray-700'} rounded-2xl px-4 py-3 shadow-lg overflow-hidden`;
-
-    if (type === 'user') {
-        bubble.classList.remove('w-full'); // User messages shouldn't be full width if short
-        bubble.classList.add('w-auto');
-    }
+    bubble.className = `relative max-w-[85%] rounded-lg px-4 py-2 text-sm shadow-sm ${type === 'user'
+        ? 'bg-primary text-primary-foreground'
+        : 'bg-muted/50 text-foreground border border-border'
+        }`;
 
     bubble.innerHTML = html;
+
+    messageDiv.appendChild(avatar);
     messageDiv.appendChild(bubble);
+
     chatContainer.appendChild(messageDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 
@@ -199,7 +208,6 @@ function handleEvent(response) {
     const event = normalizeEvent(response);
     console.log('Normalized Event:', event);
 
-    // Special handling for user messages (not from server usually, but for consistency)
     if (event.type === 'user_message') {
         appendMessageElement(event.message, 'user');
         return;
@@ -211,10 +219,7 @@ function handleEvent(response) {
             break;
 
         case 'exec_approval_request':
-            // We render this as a special assistant message
             appendMessageElement(renderApprovalRequest(event), 'assistant');
-            // Also show the global panel if needed, or just rely on the inline card
-            // showApprovalPanel(...) // Optional: keep the sticky panel if desired
             break;
 
         case 'agent_reasoning':
@@ -231,17 +236,13 @@ function handleEvent(response) {
             break;
 
         case 'task_complete':
-            // Maybe just a small status update
-            // appendMessageElement('<div class="text-xs text-green-400">Task Completed</div>', 'system');
             break;
 
         case 'error':
-            appendMessageElement(`<div class="text-red-400 font-medium">Error: ${event.message}</div>`, 'system');
+            appendMessageElement(`<div class="text-destructive font-medium">Error: ${event.message}</div>`, 'system');
             break;
 
         case 'unknown':
-            // For debugging, render unknown messages in an accordion
-            // Only if it's not a boring message
             if (event.original.method !== 'item/started' && event.original.method !== 'item/completed') {
                 appendMessageElement(renderAccordion(`Debug: ${event.original.method}`, event.original), 'system');
             }
@@ -259,17 +260,17 @@ function updateStatus(connected) {
     const sendBtn = document.getElementById('send-btn');
 
     if (connected) {
-        statusDot.className = 'w-2 h-2 rounded-full bg-green-500 animate-pulse';
+        statusDot.className = 'w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse';
         statusText.textContent = 'Connected';
         connectBtn.textContent = 'Disconnect';
-        connectBtn.className = 'bg-red-500/20 hover:bg-red-500/30 backdrop-blur-sm text-white px-6 py-2 rounded-full font-medium transition-all duration-200 hover:scale-105';
+        connectBtn.className = 'text-xs font-medium bg-destructive text-destructive-foreground hover:bg-destructive/90 px-3 py-1.5 rounded-md transition-colors';
         messageInput.disabled = false;
         sendBtn.disabled = false;
     } else {
-        statusDot.className = 'w-2 h-2 rounded-full bg-red-500';
+        statusDot.className = 'w-1.5 h-1.5 rounded-full bg-destructive';
         statusText.textContent = 'Disconnected';
         connectBtn.textContent = 'Connect';
-        connectBtn.className = 'bg-white/20 hover:bg-white/30 backdrop-blur-sm text-white px-6 py-2 rounded-full font-medium transition-all duration-200 hover:scale-105';
+        connectBtn.className = 'text-xs font-medium bg-primary text-primary-foreground hover:bg-primary/90 px-3 py-1.5 rounded-md transition-colors';
         messageInput.disabled = true;
         sendBtn.disabled = true;
     }
@@ -288,7 +289,7 @@ function connect() {
 
     ws.onopen = () => {
         updateStatus(true);
-        appendMessageElement('<div class="text-green-400">✓ Connected to SRE Agent</div>', 'system');
+        appendMessageElement('<div class="text-green-500">✓ Connected to SRE Agent</div>', 'system');
 
         const initMessage = {
             method: "initialize",
@@ -305,7 +306,6 @@ function connect() {
     };
 
     ws.onmessage = (event) => {
-        // Parse SSE format
         const text = event.data;
         const lines = text.split('\n');
         let eventType = null;
@@ -325,11 +325,10 @@ function connect() {
 
         if (!eventType || !data) return;
 
-        // Handle initialization flow explicitly
         if (eventType === 'rpc_result') {
             const response = data;
             if (response.id === 1 && response.result) {
-                appendMessageElement('<div class="text-green-400">✓ Session initialized</div>', 'system');
+                appendMessageElement('<div class="text-green-500">✓ Session initialized</div>', 'system');
                 const threadStartMessage = {
                     method: "thread/start",
                     params: {
@@ -350,14 +349,13 @@ function connect() {
 
             if (response.id === 2 && response.result?.thread?.id) {
                 threadId = response.result.thread.id;
-                appendMessageElement(`<div class="text-green-400">✓ Thread started (${threadId.substring(0, 8)}...)</div>`, 'system');
+                appendMessageElement(`<div class="text-green-500">✓ Thread started (${threadId.substring(0, 8)}...)</div>`, 'system');
                 return;
             }
         }
 
         hideTypingIndicator();
 
-        // Map new SSE events to internal format for handleEvent
         let internalEvent = null;
         switch (eventType) {
             case 'ai_message':
@@ -375,7 +373,6 @@ function connect() {
                 };
                 break;
             case 'tool_calling_result':
-                // Optional: display tool output if needed, or ignore
                 break;
             case 'ai_answer_end':
                 internalEvent = { type: 'task_complete' };
@@ -394,12 +391,12 @@ function connect() {
 
     ws.onerror = (error) => {
         console.error('WebSocket error:', error);
-        appendMessageElement('<div class="text-red-400">❌ Connection error</div>', 'system');
+        appendMessageElement('<div class="text-destructive">❌ Connection error</div>', 'system');
     };
 
     ws.onclose = () => {
         updateStatus(false);
-        appendMessageElement('<div class="text-gray-400">✗ Disconnected</div>', 'system');
+        appendMessageElement('<div class="text-muted-foreground">✗ Disconnected</div>', 'system');
         threadId = null;
     };
 }
@@ -443,11 +440,8 @@ function handleApproval(decision) {
 
     ws.send(JSON.stringify(response));
 
-    // Update the UI to show decision
-    // Ideally we would replace the approval card, but appending a status message is easier for now
-    appendMessageElement(`<div class="text-${decision === 'accept' ? 'green' : 'red'}-400">Command ${decision === 'accept' ? 'Approved' : 'Declined'}</div>`, 'system');
+    appendMessageElement(`<div class="text-${decision === 'accept' ? 'green' : 'red'}-500">Command ${decision === 'accept' ? 'Approved' : 'Declined'}</div>`, 'system');
 
-    // Hide global panel if used
     const panel = document.getElementById('approval-panel');
     if (panel) panel.classList.add('hidden');
 
@@ -458,16 +452,21 @@ function showTypingIndicator() {
     const chatContainer = document.getElementById('chat-container');
     const typingDiv = document.createElement('div');
     typingDiv.id = 'typing-indicator';
-    typingDiv.className = 'flex justify-start mb-4';
+    typingDiv.className = 'flex gap-4 mb-6 animate-fade-in';
+
     typingDiv.innerHTML = `
-        <div class="bg-gray-800 border border-gray-700 rounded-2xl px-6 py-4 shadow-lg">
-            <div class="flex space-x-2">
-                <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 0ms"></div>
-                <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 150ms"></div>
-                <div class="w-2 h-2 bg-gray-500 rounded-full animate-bounce" style="animation-delay: 300ms"></div>
+        <div class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 border border-border bg-muted text-muted-foreground">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        </div>
+        <div class="relative max-w-[85%] rounded-lg px-4 py-2 text-sm shadow-sm bg-muted/50 text-foreground border border-border">
+            <div class="flex space-x-1 h-5 items-center">
+                <div class="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style="animation-delay: 0ms"></div>
+                <div class="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style="animation-delay: 150ms"></div>
+                <div class="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style="animation-delay: 300ms"></div>
             </div>
         </div>
     `;
+
     chatContainer.appendChild(typingDiv);
     chatContainer.scrollTop = chatContainer.scrollHeight;
 }
