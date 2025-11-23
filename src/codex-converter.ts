@@ -5,7 +5,6 @@ import { AgentReasoningEvent } from "./codex-types/AgentReasoningEvent.js";
 import { ExecApprovalRequestEvent } from "./codex-types/ExecApprovalRequestEvent.js";
 import { TaskCompleteEvent } from "./codex-types/TaskCompleteEvent.js";
 import { TokenCountEvent } from "./codex-types/TokenCountEvent.js";
-import { UserMessageEvent } from "./codex-types/UserMessageEvent.js";
 import { PatchApplyBeginEvent } from "./codex-types/PatchApplyBeginEvent.js";
 import { PatchApplyEndEvent } from "./codex-types/PatchApplyEndEvent.js";
 

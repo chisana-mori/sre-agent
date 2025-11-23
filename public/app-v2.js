@@ -285,7 +285,7 @@ function toggleConnection() {
 }
 
 function connect() {
-    ws = new WebSocket('ws://localhost:3000/api/v1/sre/socket');
+    ws = new WebSocket('ws://localhost:8081/api/v1/sre/socket');
 
     ws.onopen = () => {
         updateStatus(true);
