@@ -181,14 +181,14 @@ function appendMessageElement(html, type, callback) {
 
     // Avatar
     const avatar = document.createElement('div');
-    avatar.className = `w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 border border-border ${type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`;
+    avatar.className = `w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border border-border ${type === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`;
     avatar.innerHTML = type === 'user'
         ? '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>'
-        : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>';
+        : '<svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>';
 
     // Content Bubble
     const bubble = document.createElement('div');
-    bubble.className = `relative max-w-[85%] rounded-lg px-4 py-2 text-sm shadow-sm ${type === 'user'
+    bubble.className = `relative max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm ${type === 'user'
         ? 'bg-primary text-primary-foreground'
         : 'bg-muted/50 text-foreground border border-border'
         }`;
@@ -455,10 +455,10 @@ function showTypingIndicator() {
     typingDiv.className = 'flex gap-4 mb-6 animate-fade-in';
 
     typingDiv.innerHTML = `
-        <div class="w-8 h-8 rounded-md flex items-center justify-center flex-shrink-0 border border-border bg-muted text-muted-foreground">
-            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" /></svg>
+        <div class="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 border border-border bg-muted text-muted-foreground">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8V4H8"/><rect width="16" height="12" x="4" y="8" rx="2"/><path d="M2 14h2"/><path d="M20 14h2"/><path d="M15 13v2"/><path d="M9 13v2"/></svg>
         </div>
-        <div class="relative max-w-[85%] rounded-lg px-4 py-2 text-sm shadow-sm bg-muted/50 text-foreground border border-border">
+        <div class="relative max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm bg-muted/50 text-foreground border border-border">
             <div class="flex space-x-1 h-5 items-center">
                 <div class="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style="animation-delay: 0ms"></div>
                 <div class="w-1.5 h-1.5 bg-muted-foreground rounded-full animate-bounce" style="animation-delay: 150ms"></div>
