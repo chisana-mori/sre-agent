@@ -1,123 +1,115 @@
-import WebSocket from 'ws';
-import * as readline from 'readline';
+// SSE client that sends the alert payload to /api/stream/investigate and
+// prints streamed events from the server.
 
-const ws = new WebSocket('ws://localhost:3000/api/v1/sre/socket');
+const payload = {
+  cache_control: {
+    bypass_cache: false,
+    prefer_cache: false,
+  },
+  context: {
+    response_language: 'zh-CN',
+  },
+  force_refresh: false,
+  include_tool_call_results: true,
+  include_tool_calls: true,
+  prefer_cache: false,
+  prompt_template: 'builtin://generic_investigation.jinja2',
+  source: 'webui',
+  source_instance_id: 'backend',
+  subject: {
+    labels: {
+      alertname: 'HighMemoryUsage',
+      beta_kubernetes_io_arch: 'arm64',
+      beta_kubernetes_io_os: 'linux',
+      container: 'alertmanager',
+      image: 'docker.io/prom/alertmanager:v0.26.0',
+      instance: 'kind-worker',
+      job: 'kubernetes-cadvisor',
+      kubernetes_io_arch: 'arm64',
+      kubernetes_io_hostname: 'kind-worker',
+      kubernetes_io_os: 'linux',
+      namespace: 'robusta',
+      node: 'kind-worker',
+      pod: 'alertmanager-standalone-6c6579dbf6-nwvb6',
+      severity: 'warning',
+    },
+    severity: 'medium',
+    starts_at: '2025-11-23T07:21:55Z',
+    status: 'firing',
+    title: 'HighMemoryUsage',
+  },
+  title: 'HighMemoryUsage',
+};
 
-// Create readline interface for user input
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout
-});
+async function main() {
+  const res = await fetch('http://localhost:8081/api/stream/investigate', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Accept: 'text/event-stream',
+    },
+    body: JSON.stringify(payload),
+  });
 
-// Helper function to prompt user for approval
-function promptApproval(message: string, itemId: string, requestId: number | null): void {
-    rl.question(`\n${message}\nApprove? (y/n): `, (answer) => {
-        const decision = answer.toLowerCase() === 'y' ? 'accept' : 'decline';
+  if (!res.ok || !res.body) {
+    console.error('Failed to open SSE stream', res.status, res.statusText);
+    const text = await res.text().catch(() => '');
+    if (text) console.error(text);
+    return;
+  }
 
-        const approvalResponse = {
-            id: requestId,
-            result: {
-                decision: decision
-            }
-        };
+  console.log('SSE stream opened. Listening for events...\n');
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buffer = '';
 
-        console.log(`\nSending approval decision: ${decision}`);
-        ws.send(JSON.stringify(approvalResponse));
-    });
+  const processBuffer = () => {
+    let sep = buffer.indexOf('\n\n');
+    while (sep !== -1) {
+      const raw = buffer.slice(0, sep).trim();
+      buffer = buffer.slice(sep + 2);
+      if (raw) {
+        handleEvent(raw);
+      }
+      sep = buffer.indexOf('\n\n');
+    }
+  };
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      console.log('\nSSE stream closed by server.');
+      break;
+    }
+    buffer += decoder.decode(value, { stream: true });
+    processBuffer();
+  }
 }
 
-ws.on('open', () => {
-    const initMessage = {
-        method: "initialize",
-        params: {
-            clientInfo: {
-                name: "sre-agent-test",
-                version: "1.0.0",
-                title: "test"
-            }
-        },
-        id: 1
-    };
+function handleEvent(raw: string) {
+  let eventType: string | null = null;
+  const dataLines: string[] = [];
 
-    console.log('Sending Initialize:', JSON.stringify(initMessage, null, 2));
-    ws.send(JSON.stringify(initMessage));
-});
-
-ws.on('message', (data) => {
-    console.log('Received:', data.toString());
-    const response = JSON.parse(data.toString());
-
-    // If initialization successful, start a thread with approval enabled
-    if (response.id === 1 && !response.error) {
-        const threadStartMessage = {
-            method: "thread/start",
-            params: {
-                cwd: process.cwd(),
-                model: null,
-                modelProvider: null,
-                approvalPolicy: "onRequest",     // Request approval for every command (JSON-RPC uses camelCase)
-                sandbox: "workspaceWrite",       // Allow workspace write access
-                config: null,
-                baseInstructions: null,
-                developerInstructions: null
-            },
-            id: 2
-        };
-        console.log('Starting Thread:', JSON.stringify(threadStartMessage, null, 2));
-        ws.send(JSON.stringify(threadStartMessage));
+  raw.split('\n').forEach((line) => {
+    if (line.startsWith('event: ')) {
+      eventType = line.substring(7).trim();
+    } else if (line.startsWith('data: ')) {
+      dataLines.push(line.substring(6));
     }
-    // If thread started, send a turn with user input
-    else if (response.id === 2 && response.result?.thread?.id) {
-        const turnStartMessage = {
-            method: "turn/start",
-            params: {
-                threadId: response.result.thread.id,
-                input: [
-                    {
-                        type: "text",
-                        text: "Check disk usage on localhost"
-                    }
-                ],
-                cwd: null,
-                approvalPolicy: null,
-                sandboxPolicy: null,
-                model: null,
-                effort: null,
-                summary: null
-            },
-            id: 3
-        };
-        console.log('Starting Turn:', JSON.stringify(turnStartMessage, null, 2));
-        ws.send(JSON.stringify(turnStartMessage));
-    }
-    // Handle command execution approval request
-    else if (response.method === 'item/commandExecution/requestApproval') {
-        const params = response.params;
-        const requestId = response.id;
-        promptApproval(
-            `🔔 Command Execution Approval Request:\nThread: ${params.threadId}\nTurn: ${params.turnId}\nCommand ID: ${params.itemId}\nReason: ${params.reason || 'N/A'}\nRisk: ${params.risk || 'N/A'}`,
-            params.itemId,
-            requestId
-        );
-    }
-    // Handle file change approval request
-    else if (response.method === 'item/fileChange/requestApproval') {
-        const params = response.params;
-        const requestId = response.id;
-        promptApproval(
-            `🔔 File Change Approval Request:\nFile: ${params.itemId}`,
-            params.itemId,
-            requestId
-        );
-    }
-});
+  });
 
-ws.on('error', (error) => {
-    console.error('WebSocket error:', error);
-});
+  const dataText = dataLines.join('\n');
+  let data: any = dataText;
+  try {
+    data = JSON.parse(dataText);
+  } catch {
+    // keep raw text if not JSON
+  }
 
-ws.on('close', () => {
-    console.log('Disconnected');
-    rl.close();
-    process.exit(0);
+  console.log(`\n[event: ${eventType || 'unknown'}]`);
+  console.log(data);
+}
+
+main().catch((err) => {
+  console.error('Stream failed:', err);
 });

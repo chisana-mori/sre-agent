@@ -1,26 +1,26 @@
 export function constructAlertPrompt(data: any): string {
-    const { title, source, description, subject, context, sections, cluster, extras } = data;
+  const { title, source, description, subject, context, sections, cluster, extras } = data;
 
-    // Extract template variables from input data
-    const issue = description || title || 'Unknown issue';
-    const clusterName = cluster || context?.cluster || '';
-    const now = new Date().toISOString();
-    const startTimestamp = context?.start_timestamp || 'Not specified';
-    const endTimestamp = context?.end_timestamp || 'Not specified';
+  // Extract template variables from input data
+  const issue = description || title || 'Unknown issue';
+  const clusterName = cluster || context?.cluster || '';
+  const now = new Date().toISOString();
+  const startTimestamp = context?.start_timestamp || 'Not specified';
+  const endTimestamp = context?.end_timestamp || 'Not specified';
 
-    let startMillis = 'start_timestamp_millis';
-    let endMillis = 'end_timestamp_millis';
+  let startMillis = 'start_timestamp_millis';
+  let endMillis = 'end_timestamp_millis';
 
-    try {
-        const s = new Date(startTimestamp);
-        const e = new Date(endTimestamp);
-        if (!isNaN(s.getTime())) startMillis = s.getTime().toString();
-        if (!isNaN(e.getTime())) endMillis = e.getTime().toString();
-    } catch (e) {
-        // ignore
-    }
+  try {
+    const s = new Date(startTimestamp);
+    const e = new Date(endTimestamp);
+    if (!isNaN(s.getTime())) startMillis = s.getTime().toString();
+    if (!isNaN(e.getTime())) endMillis = e.getTime().toString();
+  } catch (e) {
+    // ignore
+  }
 
-    let prompt = `你是一个拥有常用 DevOps 和 IT 工具的 AI 助手，可以使用这些工具来排查问题或回答问题。
+  let prompt = `你是一个拥有常用 DevOps 和 IT 工具的 AI 助手，可以使用这些工具来排查问题或回答问题。
 只要可能，你必须先使用工具进行调查，然后再回答问题。
 同时请求多个工具调用，因为这可以为用户节省时间。
 不要说“基于工具输出”。
@@ -266,64 +266,64 @@ export function constructAlertPrompt(data: any): string {
 当用户提到没有年份的日期（例如，“3月25日”，“去年5月”等）时，除非上下文另有说明，否则假设他们指的是当前年份。
 `;
 
-    // Replace placeholders
-    prompt = prompt.replace(/'start_timestamp'/g, startTimestamp);
-    prompt = prompt.replace(/'end_timestamp'/g, endTimestamp);
-    prompt = prompt.replace(/'start_timestamp_millis'/g, startMillis);
-    prompt = prompt.replace(/'end_timestamp_millis'/g, endMillis);
+  // Replace placeholders
+  prompt = prompt.replace(/'start_timestamp'/g, startTimestamp);
+  prompt = prompt.replace(/'end_timestamp'/g, endTimestamp);
+  prompt = prompt.replace(/'start_timestamp_millis'/g, startMillis);
+  prompt = prompt.replace(/'end_timestamp_millis'/g, endMillis);
 
-    // Append Context
-    prompt += `\n\n# 当前调查请求\n`;
-    prompt += `当前时间：${now}\n`;
-    prompt += `告警：${issue}\n`;
-    prompt += `时间范围：${startTimestamp} 到 ${endTimestamp}\n`;
-    if (clusterName) {
-        prompt += `Cluster: ${clusterName}\n`;
+  // Append Context
+  prompt += `\n\n# 当前调查请求\n`;
+  prompt += `当前时间：${now}\n`;
+  prompt += `告警：${issue}\n`;
+  prompt += `时间范围：${startTimestamp} 到 ${endTimestamp}\n`;
+  if (clusterName) {
+    prompt += `Cluster: ${clusterName}\n`;
+  }
+
+  // Append extras first (as per mandate)
+  if (extras) {
+    prompt += `**用户额外信息（优先）**\n`;
+    if (typeof extras === 'string') {
+      prompt += `${extras}\n\n`;
+    } else {
+      prompt += `${JSON.stringify(extras, null, 2)}\n\n`;
     }
+  }
 
-    // Append extras first (as per mandate)
-    if (extras) {
-        prompt += `**用户额外信息（优先）**\n`;
-        if (typeof extras === 'string') {
-            prompt += `${extras}\n\n`;
-        } else {
-            prompt += `${JSON.stringify(extras, null, 2)}\n\n`;
-        }
+  // Append subject details
+  if (subject) {
+    prompt += `**主体详情**\n`;
+    for (const [key, value] of Object.entries(subject)) {
+      if (typeof value === 'object') {
+        prompt += `${key}: ${JSON.stringify(value)}\n`;
+      } else {
+        prompt += `${key}: ${value}\n`;
+      }
     }
+    prompt += `\n`;
+  }
 
-    // Append subject details
-    if (subject) {
-        prompt += `**主体详情**\n`;
-        for (const [key, value] of Object.entries(subject)) {
-            if (typeof value === 'object') {
-                prompt += `${key}: ${JSON.stringify(value)}\n`;
-            } else {
-                prompt += `${key}: ${value}\n`;
-            }
-        }
-        prompt += `\n`;
+  // Append context details
+  if (context) {
+    prompt += `**上下文详情**\n`;
+    for (const [key, value] of Object.entries(context)) {
+      if (key === 'cluster') continue; // Already handled above
+      if (key === 'start_timestamp') continue;
+      if (key === 'end_timestamp') continue;
+      prompt += `${key}: ${value}\n`;
     }
+    prompt += `\n`;
+  }
 
-    // Append context details
-    if (context) {
-        prompt += `**上下文详情**\n`;
-        for (const [key, value] of Object.entries(context)) {
-            if (key === 'cluster') continue; // Already handled above
-            if (key === 'start_timestamp') continue;
-            if (key === 'end_timestamp') continue;
-            prompt += `${key}: ${value}\n`;
-        }
-        prompt += `\n`;
-    }
+  // Append custom sections if provided
+  if (sections && Array.isArray(sections)) {
+    sections.forEach((section: any) => {
+      if (section.title && section.content) {
+        prompt += `**${section.title}**\n${section.content}\n\n`;
+      }
+    });
+  }
 
-    // Append custom sections if provided
-    if (sections && Array.isArray(sections)) {
-        sections.forEach((section: any) => {
-            if (section.title && section.content) {
-                prompt += `**${section.title}**\n${section.content}\n\n`;
-            }
-        });
-    }
-
-    return prompt;
+  return prompt;
 }
