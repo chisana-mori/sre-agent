@@ -1,12 +1,12 @@
-import { ExecCommandBeginEvent } from '../codex-types/ExecCommandBeginEvent.js';
-import { ExecCommandEndEvent } from '../codex-types/ExecCommandEndEvent.js';
-import { AgentMessageEvent } from '../codex-types/AgentMessageEvent.js';
-import { AgentReasoningEvent } from '../codex-types/AgentReasoningEvent.js';
-import { ExecApprovalRequestEvent } from '../codex-types/ExecApprovalRequestEvent.js';
-import { TaskCompleteEvent } from '../codex-types/TaskCompleteEvent.js';
-import { TokenCountEvent } from '../codex-types/TokenCountEvent.js';
-import { PatchApplyBeginEvent } from '../codex-types/PatchApplyBeginEvent.js';
-import { PatchApplyEndEvent } from '../codex-types/PatchApplyEndEvent.js';
+import { ExecCommandBeginEvent } from './codex-types/ExecCommandBeginEvent.js';
+import { ExecCommandEndEvent } from './codex-types/ExecCommandEndEvent.js';
+import { AgentMessageEvent } from './codex-types/AgentMessageEvent.js';
+import { AgentReasoningEvent } from './codex-types/AgentReasoningEvent.js';
+import { ExecApprovalRequestEvent } from './codex-types/ExecApprovalRequestEvent.js';
+import { TaskCompleteEvent } from './codex-types/TaskCompleteEvent.js';
+import { TokenCountEvent } from './codex-types/TokenCountEvent.js';
+import { PatchApplyBeginEvent } from './codex-types/PatchApplyBeginEvent.js';
+import { PatchApplyEndEvent } from './codex-types/PatchApplyEndEvent.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function convertCodexMessageToSSE(message: any): string[] {
@@ -23,22 +23,6 @@ export function convertCodexMessageToSSE(message: any): string[] {
   }
 
   if (!message || !message.params || !message.params.msg) {
-    // Handle direct method calls like item/commandExecution/requestApproval
-    if (message.method === 'item/commandExecution/requestApproval') {
-      const params = message.params;
-      const requestId = message.id;
-
-      const sseData = {
-        request_id: requestId,
-        tool_call_id: params.itemId,
-        description: `Command Execution Approval Request:\nThread: ${params.threadId}\nTurn: ${params.turnId}\nCommand ID: ${params.itemId}\nReason: ${params.reason || 'N/A'}\nRisk: ${params.risk || 'N/A'}`,
-        reason: params.reason,
-        risk: params.risk,
-        thread_id: params.threadId,
-        turn_id: params.turnId,
-      };
-      events.push(`event: approval_required\ndata: ${JSON.stringify(sseData)}\n\n`);
-    }
     return events;
   }
 
@@ -126,17 +110,9 @@ export function convertCodexMessageToSSE(message: any): string[] {
       break;
     }
     case 'exec_approval_request': {
+      console.log(message.id);
       const event = msg as ExecApprovalRequestEvent;
-
-      // Filter out events with empty commands (duplicate/phantom events)
-      if (!event.command || event.command.length === 0) {
-        return events;
-      }
-
-      // For exec_approval_request, we do NOT send a request_id as per user instruction.
-      // The actionable approval event comes from item/commandExecution/requestApproval.
       const sseData = {
-        request_id: null,
         tool_call_id: event.call_id,
         description: event.command.join(' '),
         reason: event.reason,
@@ -177,63 +153,6 @@ export function convertCodexMessageToSSE(message: any): string[] {
       break;
     }
     // Add other cases as needed
-    case 'plan_update': {
-      const plan = msg.plan || msg.task || [];
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const completedCount = plan.filter((p: any) => p.status === 'completed').length;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const inProgressCount = plan.filter((p: any) => p.status === 'in_progress').length;
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const pendingCount = plan.filter((p: any) => p.status === 'pending').length;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const todos = plan.map((p: any, index: number) => ({
-        id: (index + 1).toString(),
-        content: p.step,
-        status: p.status,
-      }));
-
-      let taskListMarkdown = '';
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      todos.forEach((todo: any) => {
-        const mark = todo.status === 'completed' ? '[✓]' : '[ ]';
-        taskListMarkdown += `${mark} [${todo.id}] ${todo.content}\n`;
-      });
-
-      const dataString = `✅ Investigation plan updated with ${plan.length} tasks. Tasks are now stored in session and will appear in subsequent prompts.\n\n# CURRENT INVESTIGATION TASKS\n\n**Task Status**: ${completedCount} completed, ${inProgressCount} in progress, ${pendingCount} pending\n\n${taskListMarkdown}\n\n**Instructions**: Use TodoWrite tool to update task status as you work. Mark tasks as 'in_progress' when starting, 'completed' when finished.`;
-
-      const toolCallId = `call_${Math.random().toString(36).substr(2, 9)}`;
-
-      // 1. start_tool_calling
-      const startEventData = {
-        tool_name: 'TodoWrite',
-        id: toolCallId,
-      };
-      events.push(`event: start_tool_calling\ndata: ${JSON.stringify(startEventData)}\n\n`);
-
-      // 2. tool_calling_result
-      const resultEventData = {
-        tool_call_id: toolCallId,
-        role: 'tool',
-        description: 'Update investigation tasks',
-        name: 'TodoWrite',
-        result: {
-          schema_version: 'robusta:v1.0.0',
-          status: 'success',
-          error: null,
-          return_code: null,
-          data: dataString,
-          url: null,
-          invocation: null,
-          params: {
-            todos: todos,
-          },
-          icon_url: null,
-        },
-      };
-      events.push(`event: tool_calling_result\ndata: ${JSON.stringify(resultEventData)}\n\n`);
-      break;
-    }
   }
 
   return events;
