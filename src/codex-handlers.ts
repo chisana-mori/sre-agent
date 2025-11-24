@@ -1,7 +1,8 @@
-import type { CodexProcess } from './codex-process.js';
-import type { SSEConnection, PendingRequest } from './server-types.js';
-import { constructAlertPrompt } from './prompt-utils.js';
-import { REQUEST_IDS, createThreadParams, createTurnParams, generateRequestId } from './server-utils.js';
+import type { CodexProcess } from './services/codex-process.js';
+import type { SSEConnection, PendingRequest } from './types/index.js';
+import { constructAlertPrompt } from './utils/prompt-builder.js';
+import { REQUEST_IDS } from './config/constants.js';
+import { createThreadParams, createTurnParams, generateRequestId } from './utils/common-utils.js';
 import { convertCodexMessageToSSE } from './codex-converter.js';
 
 /**
