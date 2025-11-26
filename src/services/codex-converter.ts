@@ -7,6 +7,8 @@ import { TaskCompleteEvent } from '../codex-types/TaskCompleteEvent.js';
 import { TokenCountEvent } from '../codex-types/TokenCountEvent.js';
 import { PatchApplyBeginEvent } from '../codex-types/PatchApplyBeginEvent.js';
 import { PatchApplyEndEvent } from '../codex-types/PatchApplyEndEvent.js';
+import { McpToolCallBeginEvent } from '../codex-types/McpToolCallBeginEvent.js';
+import { McpToolCallEndEvent } from '../codex-types/McpToolCallEndEvent.js';
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export function convertCodexMessageToSSE(message: any): string[] {
@@ -103,6 +105,64 @@ export function convertCodexMessageToSSE(message: any): string[] {
           stdout: event.stdout,
           stderr: event.stderr,
           success: event.success,
+        },
+      };
+      events.push(`event: tool_calling_result\ndata: ${JSON.stringify(sseData)}\n\n`);
+      break;
+    }
+    case 'mcp_tool_call_begin': {
+      const event = msg as McpToolCallBeginEvent;
+      const toolName = event.invocation.tool;
+      const sseData = {
+        tool_name: toolName,
+        id: event.call_id,
+      };
+      events.push(`event: start_tool_calling\ndata: ${JSON.stringify(sseData)}\n\n`);
+      break;
+    }
+    case 'mcp_tool_call_end': {
+      const event = msg as McpToolCallEndEvent;
+      const toolName = event.invocation.tool;
+
+      let status = 'success';
+      let error = null;
+      let data = null;
+
+      if ('Ok' in event.result) {
+        status = event.result.Ok.isError ? 'error' : 'success';
+
+        const content = event.result.Ok.content || [];
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const textContent = content
+          .filter((c: any) => c.type === 'text')
+          .map((c: any) => c.text)
+          .join('\n');
+        data = textContent;
+        if (status === 'error') {
+          error = textContent;
+        }
+      } else if ('Err' in event.result) {
+        status = 'error';
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        const err = event.result.Err as any;
+        error = err?.error?.message || 'Unknown error';
+      }
+
+      const sseData = {
+        tool_call_id: event.call_id,
+        role: 'tool',
+        description: `Called MCP tool: ${toolName}`,
+        name: toolName,
+        result: {
+          schema_version: 'robusta:v1.0.0',
+          status: status,
+          error: error,
+          return_code: status === 'success' ? 0 : 1,
+          data: data,
+          url: null,
+          invocation: JSON.stringify(event.invocation),
+          params: event.invocation.arguments,
+          icon_url: null,
         },
       };
       events.push(`event: tool_calling_result\ndata: ${JSON.stringify(sseData)}\n\n`);

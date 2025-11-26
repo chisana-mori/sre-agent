@@ -52,6 +52,7 @@ export class CodexProcess extends EventEmitter {
 
     this.rl.on('line', (line) => {
       if (line.trim()) {
+        console.log('[Codex IO] Received:', line);
         try {
           const message = JSON.parse(line);
           this.emit('message', message);
@@ -75,6 +76,7 @@ export class CodexProcess extends EventEmitter {
   public send(message: any) {
     if (this.process && this.process.stdin) {
       const line = JSON.stringify(message) + '\n';
+      console.log('[Codex IO] Sending:', line.trim());
       this.process.stdin.write(line);
     } else {
       throw new Error('Codex process is not running');
