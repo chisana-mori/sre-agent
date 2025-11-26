@@ -42,6 +42,10 @@ spec:
               mountPath: /root/.codex/config.toml
               subPath: config.toml
               readOnly: true
+            - name: codex-config
+              mountPath: /root/.kube/config
+              subPath: config
+              readOnly: true
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
       volumes:

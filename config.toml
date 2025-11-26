@@ -11,15 +11,9 @@ http_headers = { "Authorization" = "Bearer $OPENROUTER_API_KEY" }
 [projects."/Users/heningyu/sofeware/sre-agent"]
 trust_level = "untrusted"
 
-# 定义 k8sgpt 服务
 [mcp_servers.k8sgpt]
-command = "/usr/local/bin/k8sgpt"
-args = ["serve", "--mcp"]
-
-# 定义 k8sgpt 的环境变量
-[mcp_servers.k8sgpt.env]
-KUBECONFIG = "/Users/yourname/.kube/config"
-K8SGPT_AI_PROVIDER = "openai"
-K8SGPT_AI_MODEL = "gpt-4"
-K8SGPT_OPENAI_API_KEY = "sk-proj-......"
-K8SGPT_OPENAI_BASE_URL = "https://api.your-proxy.com/v1"
+command = "/bin/bash"
+args = [
+    "-c",
+    "k8sgpt serve -b localai --mcp --port 9098"
+]

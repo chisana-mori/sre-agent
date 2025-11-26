@@ -26,6 +26,28 @@ codexConfig: |
   K8SGPT_OPENAI_API_KEY = "sk-proj-......"
   K8SGPT_OPENAI_BASE_URL = "https://api.your-proxy.com/v1"
 
+# Kubeconfig file content
+# This will be mounted as ~/.kube/config in the container
+kubeConfig: |
+  apiVersion: v1
+  clusters:
+  - cluster:
+      server: https://kubernetes.docker.internal:6443
+    name: docker-desktop
+  contexts:
+  - context:
+      cluster: docker-desktop
+      user: docker-desktop
+    name: docker-desktop
+  current-context: docker-desktop
+  kind: Config
+  preferences: {}
+  users:
+  - name: docker-desktop
+    user:
+      client-certificate-data: ...
+      client-key-data: ...
+
 image:
   repository: sre-agent
   pullPolicy: IfNotPresent
